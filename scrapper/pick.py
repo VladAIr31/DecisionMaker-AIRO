@@ -12,6 +12,10 @@ def fetch_data_set(contest_id,size,start=1):
     
     routes = []
     for submission in data['result']:
+        if 'verdict' not in submission:
+            continue
+        if 'programmingLanguage' not in submission:
+            continue
         if submission['verdict'] == 'OK' and "C++" in submission["programmingLanguage"]:
             routes.append(f"{contest_id}/submission/{submission['id']}")
         if len(routes) == size:

@@ -2,6 +2,7 @@ import os
 import select
 import threading
 import time
+import json
 
 server_pipe = '/tmp/decision-maker'
 
@@ -13,7 +14,9 @@ shutdown_flag = False
 threads = []
 
 def handle_client(client_pipe, message):
-    print(f"Handling client: {client_pipe}, message: {message}")
+    message_dict = json.loads(message)
+    print(f"Handling client: {client_pipe}")
+    print(f"Loop is \n{message_dict}")
     response = "5"  # hardcoded value
     with open(client_pipe, 'w') as f:
         f.write(response)
@@ -36,7 +39,7 @@ def server_loop():
             else:
                 print("Waiting for input...")
 
-def main():
+def start_server():
     global shutdown_flag
     print("Starting server...")
     server_thread = threading.Thread(target=server_loop)
@@ -55,4 +58,4 @@ def main():
         thread.join()
 
 if __name__ == '__main__':
-    main()
+    start_server()
