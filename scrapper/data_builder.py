@@ -85,14 +85,17 @@ class Package:
 
         if not self.loaded:
             self.fetch()
-        with open(dir / "main.cpp","w") as f:
-            f.write(self.source_code)
+        if self.source_code:
+            with open(dir / "main.cpp","w") as f:
+                f.write(self.source_code)
                 
         for indx,test in enumerate(self.tests):
-            with open(indir / f"{indx}","w") as f:
-                f.write(test["input"])
-            with open(outdir / f"{indx}","w") as f:
-                f.write(test["output"])
+            if test["input"]:
+                with open(indir / f"{indx}","w") as f:
+                    f.write(test["input"])
+            if test["output"]:
+                with open(outdir / f"{indx}","w") as f:
+                    f.write(test["output"])
                 
     def get_main(self):
         return self.path / "main.cpp"

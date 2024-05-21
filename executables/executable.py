@@ -4,6 +4,8 @@ sys.path.append('./executables')
 import data_builder
 import compilers
 import subprocess
+from pathlib import Path
+import os
 import re
 
 class Executable:
@@ -30,6 +32,8 @@ class Executable:
 
             perf_command = ["perf", "stat", "-e", "cpu-cycles,instructions", self.exe]
             
+            if not Path('/tmp/airo').exists():
+                os.mkdir('/tmp/airo')
             with open(input_file, 'r') as stdin, open('/tmp/airo/out', 'w') as stdout:
                 proc = subprocess.Popen(perf_command, stdin=stdin, stdout=stdout, stderr=subprocess.PIPE, text=True)
                 _, stderr = proc.communicate()

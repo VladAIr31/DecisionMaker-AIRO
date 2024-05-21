@@ -1,5 +1,7 @@
 import sys
 sys.path.append('./scrapper')
+sys.path.append('../scrapper')
+import scrape
 import data_builder
 from pathlib import Path
 import os
@@ -55,10 +57,10 @@ class DataSet:
     
 
 if __name__ == "__main__":
-    # data_set = DataSet(scrape.small_set())
+    # data_set = DataSet(scrape.medium_set())
     # data_set.seed()
     # data_set.expand()
     
-    data_set = DataSet("data_set_1714046499")
+    data_set = DataSet("data_set_1714148547")
     data_set.expand()
     
