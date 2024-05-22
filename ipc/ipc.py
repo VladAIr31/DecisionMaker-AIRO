@@ -1,61 +1,67 @@
 import os
 import select
 import threading
-import time
 import json
 
-server_pipe = '/tmp/decision-maker'
+class IPCServer:
+    def __init__(self, server_pipe, request_handler):
+        self.server_pipe = server_pipe
+        self.request_handler = request_handler
+        self.shutdown_flag = False
+        self.threads = []
 
-# Ensure the pipe exists
-if not os.path.exists(server_pipe):
-    os.mkfifo(server_pipe)
+        # Ensure the pipe exists
+        if not os.path.exists(self.server_pipe):
+            os.mkfifo(self.server_pipe)
+        
+        self.server_thread = None
 
-shutdown_flag = False
-threads = []
+    def handle_client(self, client_pipe, message):
+        message_dict = json.loads(message)
+        # print(f"Handling client: {client_pipe}")
+        # print(f"Received message: \n{message_dict}")
+        response = self.request_handler(message_dict)  # Use the provided callback
+        with open(client_pipe, 'w') as f:
+            f.write(response)
 
-def handle_client(client_pipe, message):
-    message_dict = json.loads(message)
-    print(f"Handling client: {client_pipe}")
-    print(f"Loop is \n{message_dict}")
-    response = "5"  # hardcoded value
-    with open(client_pipe, 'w') as f:
-        f.write(response)
+    def server_loop(self):
+        with open(self.server_pipe, 'r') as f:
+            os.set_blocking(f.fileno(), False)  # Set to non-blocking mode
+            while not self.shutdown_flag:
+                ready, _, _ = select.select([f], [], [], 1.0)  # 1.0-second timeout
+                if ready:
+                    line = f.readline().strip()
+                    if line:
+                        parts = line.split(' ', 1)
+                        if len(parts) == 2 and "client_pipe" in parts[0]:
+                            client_pipe, message = parts
+                            thread = threading.Thread(target=self.handle_client, args=(client_pipe, message))
+                            thread.start()
+                            self.threads.append(thread)
+                else:
+                    print("Waiting for input...")
 
-def server_loop():
-    global shutdown_flag
-    with open(server_pipe, 'r') as f:
-        os.set_blocking(f.fileno(), False)  # Set to non-blocking mode
-        while not shutdown_flag:
-            ready, _, _ = select.select([f], [], [], 1.0)  # 1.0-second timeout
-            if ready:
-                line = f.readline().strip()
-                if line:
-                    parts = line.split(' ', 1)
-                    if len(parts) == 2 and "client_pipe" in parts[0]:
-                        client_pipe, message = parts
-                        thread = threading.Thread(target=handle_client, args=(client_pipe, message))
-                        thread.start()
-                        threads.append(thread)
-            else:
-                print("Waiting for input...")
-
-def start_server():
-    global shutdown_flag
-    print("Starting server...")
-    server_thread = threading.Thread(target=server_loop)
-    server_thread.start()
-
-    try:
-        while server_thread.is_alive():
-            server_thread.join(timeout=1.0)
-    except KeyboardInterrupt:
+    def start(self):
+        print("Starting server...")
+        self.server_thread = threading.Thread(target=self.server_loop)
+        self.server_thread.start()
+        self.running = True
+    def stop(self):
+        if not self.running:
+            return
+        
         print("Shutting down server...")
-        shutdown_flag = True
-        server_thread.join()
+        self.shutdown_flag = True
+        if self.server_thread is not None:
+            self.server_thread.join()
 
-    # Join all client handler threads
-    for thread in threads:
-        thread.join()
+        # Join all client handler threads
+        for thread in self.threads:
+            thread.join()
+        self.running = False
+            
+    def __del__(self):
+        self.stop()
 
-if __name__ == '__main__':
-    start_server()
+def default_request_handler(message_dict):
+    return "1"

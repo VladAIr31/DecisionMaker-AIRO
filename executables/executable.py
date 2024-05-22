@@ -24,7 +24,7 @@ class Executable:
         if not self.built:
             raise Exception("Executable not built...")
 
-        print(f"Benchmarking {self.pack.get_problem()}")
+        # print(f"Benchmarking {self.pack.get_problem()}")
         cnt = 0
         total_cpu_time = 0
         for input_file in self.pack.tests():
