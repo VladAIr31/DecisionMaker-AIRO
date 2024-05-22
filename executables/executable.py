@@ -1,32 +1,33 @@
 import sys
-sys.path.append('./scrapper')
+sys.path.append('./dataset')
 sys.path.append('./executables')
-import data_builder
-import compilers
+from compilers import Compiler
+from dataset.package import Package
 import subprocess
 from pathlib import Path
 import os
 import re
 
 class Executable:
-    def __init__(self,pack: data_builder.Package,compiler: compilers.Compiler):
+    def __init__(self,pack: Package,compiler: Compiler):
         self.pack = pack
         self.compiler = compiler
     
     def build(self):
         try:
             self.exe = self.compiler.compile(self.pack.get_main())
-        except:
-            print("Failed to compile package")
-        self.built = True
-    
+            self.built = True
+        except Exception as e:
+            print(f"Failed to compile package {e}")
+     
     def run_tests(self):
         if not self.built:
             raise Exception("Executable not built...")
 
+        print(f"Benchmarking {self.pack.get_problem()}")
         cnt = 0
         total_cpu_time = 0
-        for input_file, output_file in self.pack.gen_in_out():
+        for input_file in self.pack.tests():
             # with open(output_file, 'r') as file:
             #     expected_output = file.read()
 
@@ -64,8 +65,6 @@ class Executable:
         if None in runs:
             return None
         
-        runs.sort()
-        trimmed_runs = runs[1:-1]  # Remove the first and last elements
-        mean = sum(trimmed_runs) / len(trimmed_runs)
+        mean = sum(runs) / len(runs)
     
         return mean
