@@ -3,7 +3,7 @@ import package
 from package import Package
 import os
 
-DATA_PATH=Path("/media/cristi/Data/airo")
+DATA_PATH=Path("/media/cristi/New Volume/airo")
 
 class DataSet:
     loaded = False

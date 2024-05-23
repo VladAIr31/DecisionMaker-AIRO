@@ -3,7 +3,9 @@ from executables.executable import Executable
 from dataset.dataset import DataSet
 from tqdm import tqdm
 
-AiroCompiler = compilers.AIROCompiler(compilers.AIRO)
+AiroCompiler = compilers.AIROCompiler(compilers.AIRO, ["-O2","-g"
+])
+
 GccCompiler = compilers.Compiler(compilers.GCC11_4)
 ClangCompiler = compilers.Compiler(compilers.CLANG14)
 
@@ -13,16 +15,15 @@ data_set.load()
 exes = [Executable(pack,AiroCompiler) for pack in data_set][:10]
 
 
-for exe in tqdm(exes):
+for exe in exes:
     exe.build()
 
-times = []
+# times = []
 
-for indx,exe in enumerate(tqdm(exes)):
-    cpu_cycles = exe.benchmark(1)
-    times.append(cpu_cycles)
+# for indx,exe in enumerate(tqdm(exes)):
+#     cpu_cycles = exe.benchmark(1,method="time")
+#     times.append(cpu_cycles)
     
-print(times)
-
+# print(times)
 
 AiroCompiler.stop()
