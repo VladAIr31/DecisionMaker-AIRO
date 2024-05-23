@@ -3,6 +3,7 @@ import select
 import threading
 import json
 
+
 class IPCServer:
     def __init__(self, server_pipe, request_handler):
         self.server_pipe = server_pipe
@@ -16,13 +17,25 @@ class IPCServer:
         
         self.server_thread = None
 
-    def handle_client(self, client_pipe, message):
-        message_dict = json.loads(message)
-        # print(f"Handling client: {client_pipe}")
-        # print(f"Received message: \n{message_dict}")
-        response = self.request_handler(message_dict)  # Use the provided callback
-        with open(client_pipe, 'w') as f:
-            f.write(response)
+    def handle_client(self, client_pipe):
+        def response_fn(response):
+            nonlocal client_pipe
+            with open(client_pipe + "_in", 'w') as f_w:
+                f_w.write(str(response))
+        try:
+            with open(client_pipe + "_out", 'r') as f:
+                while True:
+                    line = f.readline().strip()
+                    if line == "END":
+                        response_fn(0)
+                        break
+                    if line:
+                        message_dict = json.loads(line)
+                        message_dict["client"] = client_pipe
+
+                        self.request_handler(message_dict, response_fn)
+        except Exception as e:
+            print(f"Error handling client pipe {client_pipe}: {e}")
 
     def server_loop(self):
         with open(self.server_pipe, 'r') as f:
@@ -33,9 +46,9 @@ class IPCServer:
                     line = f.readline().strip()
                     if line:
                         parts = line.split(' ', 1)
-                        if len(parts) == 2 and "client_pipe" in parts[0]:
-                            client_pipe, message = parts
-                            thread = threading.Thread(target=self.handle_client, args=(client_pipe, message))
+                        if len(parts) == 2:
+                            _, client_pipe = parts
+                            thread = threading.Thread(target=self.handle_client, args=(client_pipe,))
                             thread.start()
                             self.threads.append(thread)
                 else:
@@ -46,6 +59,7 @@ class IPCServer:
         self.server_thread = threading.Thread(target=self.server_loop)
         self.server_thread.start()
         self.running = True
+
     def stop(self):
         if not self.running:
             return
@@ -59,9 +73,23 @@ class IPCServer:
         for thread in self.threads:
             thread.join()
         self.running = False
-            
+
     def __del__(self):
         self.stop()
 
-def default_request_handler(message_dict):
-    return "1"
+
+def default_request_handler(message_dict, response_fn):
+    response_fn(1)
+
+if __name__ == "__main__":
+    server_pipe = "/tmp/airo/decision-maker"
+    server = IPCServer(server_pipe, default_request_handler)
+    server.start()
+
+    try:
+        while True:
+            pass  # Keep the main thread alive
+    except KeyboardInterrupt:
+        server.stop()
+        print("Server stopped.")
+

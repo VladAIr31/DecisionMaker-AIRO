@@ -28,18 +28,19 @@ class Compiler:
         except subprocess.CalledProcessError as e:
             raise Exception(f"Compilation failed with error: {e.stderr}")
 
+
+import random
 class AIROCompiler(Compiler):
     def __init__(self, path,flags = CFLAGS_DEFAULT):
         if hasattr(self, 'initialized') and self.initialized:
             return
         super().__init__(path,flags)
         self.initialized = True
-        self.ipc_server = IPCServer('/tmp/decision-maker', self.handle_request)
+        self.ipc_server = IPCServer('/tmp/airo/decision-maker', self.handle_request)
         self.ipc_server.start()
 
-    def handle_request(self, message_dict):
-        compiler_hook(message_dict)
-        return "2"
+    def handle_request(self, message_dict, response_fn):
+        compiler_hook(message_dict,response_fn)
     
     def stop(self):
         if hasattr(self, 'ipc_server'):
