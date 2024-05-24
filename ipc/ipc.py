@@ -31,8 +31,6 @@ class IPCServer:
                         break
                     if line:
                         message_dict = json.loads(line)
-                        message_dict["client"] = client_pipe
-
                         self.request_handler(message_dict, response_fn)
         except Exception as e:
             print(f"Error handling client pipe {client_pipe}: {e}")

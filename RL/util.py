@@ -58,8 +58,8 @@ def extract_features(data):
     general_features = extract_general_features(data)
     subloop_features = extract_subloop_features(data.get('subloops', []))
 
-    block_tensor = torch.tensor(block_features, dtype=torch.long)
-    general_tensor = torch.tensor(general_features, dtype=torch.long)
-    subloop_tensor = torch.tensor(subloop_features, dtype=torch.long)
+    block_tensor = torch.tensor(block_features, dtype=torch.float32)
+    general_tensor = torch.tensor(general_features, dtype=torch.float32)
+    subloop_tensor = torch.tensor(subloop_features, dtype=torch.float32)
     
     return general_tensor, block_tensor, subloop_tensor

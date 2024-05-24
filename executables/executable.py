@@ -27,12 +27,10 @@ class Executable:
         cnt = 0
         total_cpu_time = 0
         for input_file in self.pack.tests():
-            perf_command = ["perf", "stat", "-e", "cpu-cycles,instructions", self.exe]
+            perf_command = ["perf", "stat", "-e", "cpu-cycles", self.exe]
             
-            if not Path('/tmp/airo').exists():
-                os.mkdir('/tmp/airo')
-            with open(input_file, 'r') as stdin, open('/tmp/airo/out', 'w') as stdout:
-                proc = subprocess.Popen(perf_command, stdin=stdin, stdout=stdout, stderr=subprocess.PIPE, text=True)
+            with open(input_file, 'r') as stdin:
+                proc = subprocess.Popen(perf_command, stdin=stdin, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
                 _, stderr = proc.communicate()
             cpu_cycles = instructions = 0
 
@@ -41,10 +39,6 @@ class Executable:
                     match = re.search(r'(\d+(?:\.\d+)*)\s+cpu-cycles', line)
                     if match:
                         cpu_cycles = int(match.group(1).replace(".", ""))
-                elif "instructions" in line:
-                    match = re.search(r'(\d+(?:\.\d+)*)\s+instructions', line)
-                    if match:
-                        instructions = int(match.group(1).replace(".", ""))
 
             total_cpu_time += cpu_cycles
             cnt += 1
@@ -78,15 +72,15 @@ class Executable:
 
             if not Path('/tmp/airo').exists():
                 os.mkdir('/tmp/airo')
-            with open(input_file, 'r') as stdin, open('/tmp/airo/out', 'w') as stdout, open('/tmp/airo/time_output', 'w') as stderr:
-                proc = subprocess.Popen(time_command, stdin=stdin, stdout=stdout, stderr=stderr, text=True)
-                proc.communicate()
-
-            with open('/tmp/airo/time_output', 'r') as f:
-                elapsed_time = float(f.read().strip())
+            
+            with open(input_file, 'r') as stdin:
+                proc = subprocess.Popen(time_command, stdin=stdin, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+                _, stderr = proc.communicate()
+                elapsed_time = float(stderr.strip())
 
             total_time += elapsed_time
             cnt += 1
+
         if cnt == 0:
             return None
 

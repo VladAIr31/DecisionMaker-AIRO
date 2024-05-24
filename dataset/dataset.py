@@ -14,7 +14,7 @@ class DataSet:
         package.TestHelper.path = self.data_dir / "tests"
     
     def load(self):
-        self.packages = [Package(self.source_code_dir / str(x)) for x in sorted(map(int,os.listdir(self.source_code_dir)))]
+        self.packages = [Package(self.source_code_dir / str(x)) for x in sorted(map(int,os.listdir(self.source_code_dir))) if x != 852] # 852 is weird....
         for package in self.packages:
             package.load()
         self.loaded = all([package.loaded for package in self.packages])
