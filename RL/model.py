@@ -62,6 +62,7 @@ def compiler_hook(message_dict, response_fn):
     # print(f"{client} : {threading.get_ident()}")
     # output = model_manager.feed_data(general_features)
     # output = int(output)
+    # print(general_features)
     output = 1 # TODO: remove
     # print(output)
     response_fn(output)

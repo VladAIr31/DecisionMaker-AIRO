@@ -6,6 +6,9 @@ from dataset.package import Package
 import subprocess
 from pathlib import Path
 import os
+import mmap
+import time
+import numpy as np
 import re
 
 class Executable:
@@ -25,63 +28,54 @@ class Executable:
             raise Exception("Executable not built...")
 
         cnt = 0
-        total_cpu_time = 0
+        total_cpu_cycles = 0
+
         for input_file in self.pack.tests():
-            perf_command = ["perf", "stat", "-e", "cpu-cycles", self.exe]
+            perf_command = f"perf stat -e cpu-cycles {self.exe} < {input_file}"
             
-            with open(input_file, 'r') as stdin:
-                proc = subprocess.Popen(perf_command, stdin=stdin, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-                _, stderr = proc.communicate()
-            cpu_cycles = instructions = 0
+            proc = subprocess.run(perf_command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+            
+            stderr = proc.stderr
+            cpu_cycles = 0
 
             for line in stderr.split('\n'):
-                if "cpu-cycles" in line:
-                    match = re.search(r'(\d+(?:\.\d+)*)\s+cpu-cycles', line)
-                    if match:
-                        cpu_cycles = int(match.group(1).replace(".", ""))
+                cpu_cycles_match = re.search(r'(\d+)\s+cpu-cycles', line.replace('.', ''))
+                if cpu_cycles_match:
+                    cpu_cycles = int(cpu_cycles_match.group(1))
 
-            total_cpu_time += cpu_cycles
+            total_cpu_cycles += cpu_cycles
             cnt += 1
+
         if cnt == 0:
             return None
 
-        return total_cpu_time / cnt
+        avg_cpu_cycles = total_cpu_cycles / cnt
 
-    def benchmark(self, times, method="perf"):
-        if method == "perf":
-            runs = [self.run_tests() for _ in range(times)]
-        elif method == "time":
-            runs = [self.benchmark_with_time() for _ in range(times)]
-        else:
-            raise ValueError("Invalid benchmarking method specified.")
+        return avg_cpu_cycles
 
-        if None in runs:
-            return None
-        
-        mean = sum(runs) / len(runs)
-        return mean
+    def benchmark(self, time_limit, outlier_threshold=1):
+        start_time = time.time()
+        runs = []
 
-    def benchmark_with_time(self):
-        if not hasattr(self, "built") or not self.built:
-            raise Exception("Executable not built...")
-
-        cnt = 0
-        total_time = 0
-        for input_file in self.pack.tests():
-            time_command = ["/usr/bin/time", "-f", "%e", self.exe]
-
-            if not Path('/tmp/airo').exists():
-                os.mkdir('/tmp/airo')
+        while (time.time() - start_time) < time_limit:
+            result = self.run_tests()
             
-            with open(input_file, 'r') as stdin:
-                proc = subprocess.Popen(time_command, stdin=stdin, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-                _, stderr = proc.communicate()
-                elapsed_time = float(stderr.strip())
+            if result is not None:
+                runs.append(result)
 
-            total_time += elapsed_time
-            cnt += 1
-
-        if cnt == 0:
+        if not runs:
             return None
 
-        return total_time / cnt
+        runs = np.array(runs)
+
+        mean = np.mean(runs)
+        std_dev = np.std(runs)
+
+        filtered_runs = runs[(runs >= mean - outlier_threshold * std_dev) & (runs <= mean + outlier_threshold * std_dev)]
+        # print(f"Ran {len(runs)}, dropped{len(runs) - len(filtered_runs)}")
+
+        if len(filtered_runs) == 0:
+            return None
+
+        filtered_mean = np.mean(filtered_runs)
+        return filtered_mean
