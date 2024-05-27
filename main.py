@@ -6,33 +6,28 @@ import numpy as np
 import concurrent.futures
 
 
-NUM_WORKERS = 4 # sweet spot for some reason
+NUM_WORKERS = 1 # all this paralelization for nothing for now, 1 worker thread is most stable......
 AiroCompiler = compilers.AIROCompiler(compilers.AIRO)
 GccCompiler = compilers.Compiler(compilers.GCC11_4)
-ClangCompiler = compilers.Compiler(compilers.CLANG14)
+ClangCompiler = compilers.Compiler(compilers.CLANG14,[])
 
 data_set = DataSet("dataset")
 data_set.load()
 
-exes = [Executable(pack,ClangCompiler) for pack in data_set][:10]
+exes = [Executable(pack,AiroCompiler) for pack in data_set][:25]
 
 times = []
 
-# Demo concurrency capability
 def run(exe):
     exe.build()
-    bench = exe.benchmark(5)
+    bench = exe.benchmark(1)
     times.append((int(str(exe.pack.path).split('/')[-1]),bench))
 
 times_dict = {i: [] for i in range(len(exes))}
 
-# warmup??
-# with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
-#         list(tqdm(executor.map(run, exes), total=len(exes)))
-
 # times = []
 
-for _ in range(3):
+for _ in range(5):
     with concurrent.futures.ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
         list(tqdm(executor.map(run, exes), total=len(exes)))
 

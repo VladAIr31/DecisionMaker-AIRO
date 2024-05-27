@@ -1,6 +1,6 @@
 import sys
 from ipc.ipc import IPCServer
-from RL.model import compiler_hook
+from RL.model import MM
 from pathlib import Path
 import subprocess
 import os
@@ -29,7 +29,6 @@ class Compiler:
             raise Exception(f"Compilation failed with error: {e.stderr}")
 
 
-import random
 class AIROCompiler(Compiler):
     def __init__(self, path,flags = CFLAGS_DEFAULT):
         if hasattr(self, 'initialized') and self.initialized:
@@ -40,7 +39,8 @@ class AIROCompiler(Compiler):
         self.ipc_server.start()
 
     def handle_request(self, message_dict, response_fn):
-        compiler_hook(message_dict,response_fn)
+        response_fn(1)
+        # MM.state(message_dict,response_fn)
     
     def stop(self):
         if hasattr(self, 'ipc_server'):
