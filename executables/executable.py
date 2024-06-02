@@ -15,6 +15,9 @@ class Executable:
     def __init__(self, pack: Package, compiler: Compiler):
         self.pack = pack
         self.compiler = compiler
+        
+    def __str__(self):
+        return str(int(str(self.pack.path).split('/')[-1]))
     
     def build(self):
         try:

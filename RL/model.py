@@ -24,17 +24,20 @@ class ModelManager:
         output_tensor = self.model(general_features)
         output_tensor = torch.clamp(output_tensor, min=1, max=100)
         output = int(output_tensor.item())
+        with open("outputs",'a') as f:
+            f.write(f"{output}\n")
         # print(f"Output {output}")
         self.prediction_history.append(output_tensor)
         response_fn(output)
+        # response_fn(1)
     
     # At the end of the game a penalty is given for the game, the model should minimze said penalty
     def evaluate_run(self, penalty):
-        # print(f"Performance {score}")
+        print(f"Penalty {penalty}")
         self.model.train()
         for prediction in self.prediction_history:
             self.optimizer.zero_grad()
-            loss = penalty
+            loss = penalty * prediction / torch.sum(prediction)
             loss.backward()
             # Gradient clipping
             self.optimizer.step()

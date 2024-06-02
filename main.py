@@ -9,7 +9,7 @@ import concurrent.futures
 NUM_WORKERS = 1 # all this paralelization for nothing for now, 1 worker thread is most stable......
 AiroCompiler = compilers.AIROCompiler(compilers.AIRO)
 GccCompiler = compilers.Compiler(compilers.GCC11_4)
-ClangCompiler = compilers.Compiler(compilers.CLANG14,[])
+ClangCompiler = compilers.Compiler(compilers.CLANG14)
 
 data_set = DataSet("dataset")
 data_set.load()

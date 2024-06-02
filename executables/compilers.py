@@ -39,8 +39,7 @@ class AIROCompiler(Compiler):
         self.ipc_server.start()
 
     def handle_request(self, message_dict, response_fn):
-        response_fn(1)
-        # MM.state(message_dict,response_fn)
+        MM.state(message_dict,response_fn)
     
     def stop(self):
         if hasattr(self, 'ipc_server'):
